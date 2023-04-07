@@ -1,0 +1,6 @@
+Ind1	U	Pop1
+Ind2	U	Pop1
+Ind3	U	Pop1
+Ind4	U	Pop1
+Ind5	U	Pop2
+Ind6	U	Pop2

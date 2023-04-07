@@ -1,0 +1,63 @@
+Package: BREADR
+Title: Estimates Degrees of Relatedness (Up to the Second Degree) for
+        Extreme Low-Coverage Data
+Version: 1.0.0
+Authors@R: 
+    c(
+    person(
+      given = "Jono", 
+      family = "Tuke", 
+      email = "simon.tuke@adelaide.edu.au", 
+      role = c("aut", "cre"),
+      comment = c(ORCID = "0000-0002-1688-8951")
+    ), 
+    person(
+      given = "Adam B.", 
+      family = "Rohrlach",
+      email = "adam.rohrlach@adelaide.edu.au", 
+      role = "aut",
+      comment = c(ORCID = "0000-0002-4204-5018")
+    ), 
+    person(
+      given = "Wolfgang", 
+      family = "Haak",
+      email = "wolfgang_haak@eva.mpg.de", 
+      role = "aut",
+      comment = c(ORCID = "0000-0003-2475-2007")
+    ), 
+    person(
+      given = "Divyaratan",
+      family = "Popli",
+      email = "divyaratan_popli@eva.mpg.de",
+      role = "aut", 
+      comment = c(ORCID = "0000-0002-0305-6427")
+    )
+    )
+Description: The goal of the package is to provide an easy-to-use method 
+  for estimating degrees of relatedness (up to the second degree) 
+  for extreme low-coverage data. The package also allows users to 
+  quantify and visualise the level of confidence in the estimated 
+  degrees of relatedness. A paper describing the method is available 
+  at Rohrlach, A. B. et al (2023) <https://tinyurl.com/29t6gbbx>. 
+License: MIT + file LICENSE
+Encoding: UTF-8
+RoxygenNote: 7.2.3
+URL: https://github.com/jonotuke/BREADR,
+        https://jonotuke.github.io/BREADR/
+BugReports: https://github.com/jonotuke/BREADR/issues
+Suggests: spelling, knitr, rmarkdown, testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Imports: data.table, dplyr, forcats, ggplot2, ggpubr, grDevices,
+        magrittr, matrixStats, purrr, readr, stringr, tibble
+Depends: R (>= 2.10)
+LazyData: true
+Language: en-US
+NeedsCompilation: no
+Packaged: 2023-04-06 21:30:02 UTC; jonathantuke
+Author: Jono Tuke [aut, cre] (<https://orcid.org/0000-0002-1688-8951>),
+  Adam B. Rohrlach [aut] (<https://orcid.org/0000-0002-4204-5018>),
+  Wolfgang Haak [aut] (<https://orcid.org/0000-0003-2475-2007>),
+  Divyaratan Popli [aut] (<https://orcid.org/0000-0002-0305-6427>)
+Maintainer: Jono Tuke <simon.tuke@adelaide.edu.au>
+Repository: CRAN
+Date/Publication: 2023-04-07 09:10:02 UTC
