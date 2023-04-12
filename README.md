@@ -19,6 +19,12 @@ their data.
 
 ## Installation
 
+To install, you can use the usual
+
+``` r
+install.packages("BREADR")
+```
+
 You can install the development version of BREADR from
 [GitHub](https://github.com/) with:
 
@@ -149,7 +155,7 @@ plotLOAF(relatedness_example)
 #> Plotting first 15 pairs.
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
 
 A plot for the assignment of the “Unrelated” degree of relatedness to
 individuals Ind1 and Ind2 can be produced which shows diagnostic
@@ -166,7 +172,7 @@ was chosen.
 plotSLICE(relatedness_example, row = 1)
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
 
 Alternatively we can choose the row using the full pair name instead of
 the row number.
@@ -175,7 +181,7 @@ the row number.
 plotSLICE(relatedness_example, row = "Ind1 - Ind2")
 ```
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
 
 We can test whether the observed PMR between Ind1 and Ind2 is consistent
 with a 3rd-degree genetic relationship, or not, but any degree of

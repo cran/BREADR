@@ -1,3 +1,7 @@
+# BREADR 1.0.1
+
+Patch as error in read files causing miscalculation of PMR. 
+
 # BREADR 1.0.0
 
 This is the version that we released to CRAN. 

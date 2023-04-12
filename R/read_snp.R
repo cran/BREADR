@@ -38,7 +38,7 @@ split_line <- function(x){
 #' read_snp(broken_snpfile)
 read_snp <- function(filename){
     df <- data.table::fread(
-      filename,
+      filename, header = FALSE,
       col.names=c("snp", "chr", "pos", "site", "anc", "der"),
       colClasses=list(character=c(1,2,5,6))
     )

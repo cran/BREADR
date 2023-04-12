@@ -10,7 +10,7 @@
 #' read_ind(ind_snpfile)
 read_ind <- function(filename){
     df <- data.table::fread(
-      filename,
+      filename, header = FALSE,
       col.names=c("ind", "sex", "pop"),
       colClasses=list(character=1:3)
     )
