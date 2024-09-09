@@ -1,7 +1,4 @@
-utils::globalVariables(
-  c("digit", "snp")
-)
-#' process Eigenstrat data - alternative version
+#' process Eigenstrat data
 #'
 #'A function that takes paths to an eigenstrat trio (ind, snp and geno file) and
 #'returns the pairwise mismatch rate for all pairs on a thinned set of SNPs.
@@ -24,7 +21,6 @@ utils::globalVariables(
 # - nsnps [numeric]: the number of overlapping snps that were compared for each pair.
 # - mismatch [numeric]: the number of sites which did not match for each pair.
 # - pmr [numeric]: the pairwise mismatch rate (mismatch/nsnps).
-#' @import data.table
 #' @export
 #'
 #' @examples
@@ -32,13 +28,13 @@ utils::globalVariables(
 #' indfile <- system.file("extdata", "example.ind.txt", package = "BREADR")
 #' genofile <- system.file("extdata", "example.geno.txt", package = "BREADR")
 #' snpfile <- system.file("extdata", "example.snp.txt", package = "BREADR")
-#' processEigenstrat(
+#' processEigenstrat_old(
 #' indfile, genofile, snpfile,
 #' filter_length=1e5,
 #' pop_pattern=NULL,
 #' filter_deam=FALSE
 #' )
-processEigenstrat <- function(indfile, genofile, snpfile,
+processEigenstrat_old <- function(indfile, genofile, snpfile,
                               filter_length=NULL, pop_pattern=NULL, filter_deam=FALSE,
                               outfile=NULL, chromosomes=NULL, verbose = TRUE){
   # Check to see if eigenstrat files exist
@@ -180,10 +176,8 @@ processEigenstrat <- function(indfile, genofile, snpfile,
     cat('Starting to read in genotype data.\n')
   }
   pb1 = utils::txtProgressBar(min=1,max=length(geno_list),initial=1,style=3)
-  dt <- data.table::fread(genofile, col.names = "snp", colClasses = "character")
   for(i in 1:n_ind){
-    dt[, digit := stringr::str_sub(snp, ind$row_number[i], ind$row_number[i]),]
-    geno_list[[i]] <- (dt[[2]] %>% dplyr::na_if("9"))[snps$relative_pos]
+    geno_list[[i]] <- (system(paste0('cut -c ',ind$row_number[i],' ',genofile),intern=T) %>% dplyr::na_if("9"))[snps$relative_pos]
     utils::setTxtProgressBar(pb1,i)
 
   }

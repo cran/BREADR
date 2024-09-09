@@ -68,7 +68,8 @@ callRelatedness <- function(pmr_tibble,
 
   # Check that the average relatedness makes sense:
   if(!is.null(average_relatedness)){
-    if((average_relatedness<=0)|average_relatedness>=1){
+    # if((average_relatedness<=0)|average_relatedness>=1){ OLD VERSION
+    if(any(average_relatedness<=0) | any(average_relatedness>=1)){
       stop('The average relatedness must be a value between 0 and 1.')
     }
   }

@@ -74,7 +74,7 @@ plotLOAF <- function(in_tibble,nsnps_cutoff=NULL,N=NULL,fntsize=7, verbose = TRU
     ggplot2::geom_hline(ggplot2::aes(yintercept=meanPMR,col=relationship),linetype='dashed',data=class_breaks,linewidth=1)+
     ggplot2::theme_bw()+
     ggplot2::geom_errorbar(ggplot2::aes(forcats::fct_reorder(pair,pmr),ymin=ymin,ymax=ymax))+
-    ggplot2::geom_point(ggplot2::aes(fill=relationship,shape=relationship),size=2)+
+    ggplot2::geom_point(ggplot2::aes(fill=relationship,shape=relationship),size=2, show.legend = TRUE)+
     ggplot2::ylab("PMR")+
     ggplot2::xlab(" ")+
     # scale_y_continuous(limits=c(0,0.25))+

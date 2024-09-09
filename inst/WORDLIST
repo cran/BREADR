@@ -16,7 +16,9 @@ der
 eigenstrat
 fontsize
 geno
+genofile
 ggplot
+linux
 magrittr
 nd
 normalisation
@@ -25,12 +27,12 @@ nsnps
 outfile
 pkgdown
 plotLOAF
+plotLoaf
 plotSLICE
 pmr
 pos
 pre
 preprocess
-printResults
 processEigenstrat
 saveSLICES
 sd

@@ -1,0 +1,16 @@
+citHeader("To cite BREADR in publications use:")
+
+bibentry(
+  bibtype   = "Article",
+  title    = "BREADR: An R Package for the Bayesian Estimation of Genetic Relatedness from Low-coverage Genotype Data",
+  author   = c(
+    person(c("Adam", "B."), "Rohrlach"),
+    person("Jonathan", "Tuke"),
+    person("Divyaratan", "Popli"),
+    person("Wolfgang", "Haak")
+  ), 
+  journal  = "bioRxiv",
+  year     = 2023,
+  doi = "10.1101/2023.04.17.537144",
+)
+
