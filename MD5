@@ -1,7 +1,7 @@
-b1f4c6cb1525952894fb699ec96cbea1 *DESCRIPTION
+4c351be9e52fabeab043f233fc233b55 *DESCRIPTION
 222c4c14a6235778064261d5a69ed03e *LICENSE
 e073398809adfe2093f65aef2e23a1ff *NAMESPACE
-322c0ff45a221c17f8c30d3a2957fe5c *NEWS.md
+afee0abeeb2bb68321019d7d2f5738c4 *NEWS.md
 c6cdce46ac0fc6d600a69981e813a9c4 *R/callRelatedness.R
 192c669730af5c34c0e12cf847d60db1 *R/counts_example.R
 a3a5064136d4c864d17372563699212d *R/get_column.R
@@ -17,11 +17,15 @@ ca6be43d6df5215d1e087be6a35dbf10 *R/sim_geno.R
 8709683d6e35062cf03f9647bc286d97 *R/test_degree.R
 b56ff2b193ecba52f9ec7f3b10cca008 *R/utils-pipe.R
 c5809481aa2cbce0ac7f5f9975d98d59 *R/utils.R
-e6620f91c43823676839fc448c6de057 *README.md
+c8346d5b8b11dd38ccd29f2886a077db *README.md
+17f84fb5596c173551cce21fdadbd8f6 *build/vignette.rds
 159dd784921dd40fc8f284951ba83ec1 *data/counts_example.rda
 4afa7fc6849867528945169b4a2573e7 *data/relatedness_example.rda
 af53832f86644c1e4e2ad64b608356e5 *inst/CITATION
-12e26e5a3bc69d9797cc0962938abb24 *inst/WORDLIST
+e4ce7d3b8edcf7e99ad024d95386885e *inst/WORDLIST
+9e27eb8bd3b83aacdd136f6b37854be4 *inst/doc/example-pipeline.R
+103bdf2d16bf80093117e66f4afb7119 *inst/doc/example-pipeline.Rmd
+9203ff1ed69ee858e0d75e5358c1688a *inst/doc/example-pipeline.html
 3f1d915c22a0ad46347e908c274f2894 *inst/extdata/broken.snp.txt
 42852b57c8ef5b117409395830ffaf9e *inst/extdata/example.geno.txt
 d51c5d20e8959a1b4e1a64e639375f93 *inst/extdata/example.ind.txt
@@ -60,3 +64,4 @@ d7a70fb39794fea804c6296f36c1040c *tests/testthat/test-processEigenstrat.R
 c36cf2539f5979cf46e0b38208cb5434 *tests/testthat/test-read_snp.R
 d2d31318bf2d836f40d8a6912782a85f *tests/testthat/test-saveSLICES.R
 9bd159f3700ac0b685fe7e0de1bcab44 *tests/testthat/test-test_degree.R
+103bdf2d16bf80093117e66f4afb7119 *vignettes/example-pipeline.Rmd
