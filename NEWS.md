@@ -1,3 +1,13 @@
+# BREADR 1.1.0
+* Added `plotDOUGH()` function
+* Added `priorSensitivity()` function
+* Changed R requirement for package to make it more accessible
+* Removed commented code from callRelatedness.
+* Made prior sum to one a warning and less restrictive for `callRelatedness()`.
+* Made sure column names were in input data for functions, not exact.
+* Added "by population" option to `processEigenstrat()` to make it faster.
+* Added a new plot called `plotROLL()` to compare PMR values between groups.
+
 # BREADR 1.0.3
 
 # BREADR 1.0.4

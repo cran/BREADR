@@ -46,5 +46,5 @@ overlapping SNPs) in panel A, and the normalised posterior probabilities
 for each possible degree of relatedness.
 }
 \examples{
-plotSLICE(relatedness_example, row = 1)
+plotSLICE(relatedness_example, row=1)
 }

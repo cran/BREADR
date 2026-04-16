@@ -6,6 +6,8 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/jonotuke/BREADR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/jonotuke/BREADR/actions/workflows/R-CMD-check.yaml)
+
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.07916/status.svg)](https://doi.org/10.21105/joss.07916)
 <!-- badges: end -->
 
 The goal of BREADR is to provide an easy-to-use method for estimating

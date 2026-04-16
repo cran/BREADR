@@ -13,7 +13,9 @@ processEigenstrat(
   filter_deam = FALSE,
   outfile = NULL,
   chromosomes = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  byPop = FALSE,
+  minMerge = 2
 )
 }
 \arguments{
@@ -35,6 +37,10 @@ if NULL, no back up saved. If no outfile, then a tibble is returned.}
 \item{chromosomes}{the chromosome to filter the data on.}
 
 \item{verbose}{controls printing of messages to console}
+
+\item{byPop}{Boolean variable identifying if all pairs of individuals should be compared (FALSE), or just pairs of individuals in the same populations (TRUE)}
+
+\item{minMerge}{(integer) the minimum group size (smaller groups are merged).}
 }
 \value{
 out_tibble: A tibble containing four columns:
@@ -47,9 +53,9 @@ and filtering out SNPs for which deamination is possible.
 }
 \examples{
 # Use internal files to the package as an example
-indfile <- system.file("extdata", "example.ind.txt", package = "BREADR")
-genofile <- system.file("extdata", "example.geno.txt", package = "BREADR")
-snpfile <- system.file("extdata", "example.snp.txt", package = "BREADR")
+indfile <- system.file("extdata", "example.ind.txt", package="BREADR")
+genofile <- system.file("extdata", "example.geno.txt", package="BREADR")
+snpfile <- system.file("extdata", "example.snp.txt", package="BREADR")
 processEigenstrat(
 indfile, genofile, snpfile,
 filter_length=1e5,

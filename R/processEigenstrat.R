@@ -1,5 +1,5 @@
 utils::globalVariables(
-  c("digit", "snp")
+  c("digit", "snp", "N", ".")
 )
 #' process Eigenstrat data - alternative version
 #'
@@ -18,6 +18,8 @@ utils::globalVariables(
 #' if NULL, no back up saved. If no outfile, then a tibble is returned.
 #' @param chromosomes the chromosome to filter the data on.
 #' @param verbose controls printing of messages to console
+#' @param byPop Boolean variable identifying if all pairs of individuals should be compared (FALSE), or just pairs of individuals in the same populations (TRUE)
+#' @param minMerge (integer) the minimum group size (smaller groups are merged).
 #'
 #' @return out_tibble: A tibble containing four columns:
 # - pair [char]: the pair of individuals that are compared.
@@ -29,70 +31,83 @@ utils::globalVariables(
 #'
 #' @examples
 #' # Use internal files to the package as an example
-#' indfile <- system.file("extdata", "example.ind.txt", package = "BREADR")
-#' genofile <- system.file("extdata", "example.geno.txt", package = "BREADR")
-#' snpfile <- system.file("extdata", "example.snp.txt", package = "BREADR")
+#' indfile <- system.file("extdata", "example.ind.txt", package="BREADR")
+#' genofile <- system.file("extdata", "example.geno.txt", package="BREADR")
+#' snpfile <- system.file("extdata", "example.snp.txt", package="BREADR")
 #' processEigenstrat(
 #' indfile, genofile, snpfile,
 #' filter_length=1e5,
 #' pop_pattern=NULL,
 #' filter_deam=FALSE
 #' )
-processEigenstrat <- function(indfile, genofile, snpfile,
-                              filter_length=NULL, pop_pattern=NULL, filter_deam=FALSE,
-                              outfile=NULL, chromosomes=NULL, verbose = TRUE){
+processEigenstrat <- function(
+  indfile,
+  genofile,
+  snpfile,
+  filter_length = NULL,
+  pop_pattern = NULL,
+  filter_deam = FALSE,
+  outfile = NULL,
+  chromosomes = NULL,
+  verbose = TRUE,
+  byPop = FALSE,
+  minMerge = 2
+) {
   # Check to see if eigenstrat files exist
-  if(!file.exists(indfile)){
-    stop(paste0('indfile ',indfile,' does not exist!'))
+  if (!file.exists(indfile)) {
+    stop(paste0('indfile ', indfile, ' does not exist!'))
   }
-  if(!file.exists(genofile)){
-    stop(paste0('genofile ',genofile,' does not exist!'))
+  if (!file.exists(genofile)) {
+    stop(paste0('genofile ', genofile, ' does not exist!'))
   }
-  if(!file.exists(snpfile)){
-    stop(paste0('snpfile ',snpfile,' does not exist!'))
+  if (!file.exists(snpfile)) {
+    stop(paste0('snpfile ', snpfile, ' does not exist!'))
+  }
+
+  # minMerge should be a number ≥2
+  if ((!is.numeric(minMerge)) | (minMerge < 2)) {
+    stop('minMerge must be a number >= 2.')
   }
 
   # Just check to see if a length filter was included and is reasonable, and if not,
   # let the user know of the default and/or problem.
-  if(is.null(filter_length)){
+  if (is.null(filter_length)) {
     filter_length <- 1e5
-    if(verbose){
+    if (verbose) {
       cat(sprintf('No site distance filter.\nUsing default minimum of 1e5.\n'))
     }
   }
-  if(!is.numeric(filter_length)|(filter_length<=0)){
+  if (!is.numeric(filter_length) | (filter_length <= 0)) {
     stop('filter_length must be a positive number.')
   }
 
   # Check if all pop_names are in the possible populations.
   # Change to delim so works in different countries.
-  # ind_raw <- readr::read_delim(
-  #   indfile,
-  #   col_names=c('ind','sex','pop'),
-  #   col_types=c('ccc'),
-  #   delim = "\t"
-  # )
   ind_raw <- read_ind(indfile)
-  if(!all(pop_pattern%in%ind_raw$pop)){
-    paste0('Following populations in pop_pattern do not exist in indfile: ',
-           paste0(setdiff(pop_pattern,ind_raw$pop),collapse=', ')) %>%
+  if (!all(pop_pattern %in% ind_raw$pop)) {
+    paste0(
+      'Following populations in pop_pattern do not exist in indfile: ',
+      paste0(setdiff(pop_pattern, ind_raw$pop), collapse = ', ')
+    ) %>%
       stop()
   }
 
   # Check that filter deam is a logical variable.
-  if(!is.logical(filter_deam)){
-    stop('filter_deam must be a logical (boolean) variable, i.e., TRUE or FALSE.')
+  if (!is.logical(filter_deam)) {
+    stop(
+      'filter_deam must be a logical (boolean) variable, i.e., TRUE or FALSE.'
+    )
   }
 
   # Check that the folder in which we plan to save the outfile actually exists.
-  if(!is.null(outfile)){
-    if(!file.exists(dirname(outfile))){
-      stop(paste0('Output folder ',dirname(outfile),' does not exist!'))
+  if (!is.null(outfile)) {
+    if (!file.exists(dirname(outfile))) {
+      stop(paste0('Output folder ', dirname(outfile), ' does not exist!'))
     }
   }
 
   # Collect SNP details
-  if(verbose){
+  if (verbose) {
     cat('Reading in SNP data.\n')
   }
   ## Read in SNP file
@@ -101,144 +116,221 @@ processEigenstrat <- function(indfile, genofile, snpfile,
   snps <-
     snps %>%
     dplyr::mutate(
-      relative_pos=1:dplyr::n()
+      relative_pos = 1:dplyr::n()
     )
   ## Mutate and filter for DEAM
-  if(filter_deam){
+  if (filter_deam) {
     snps <-
       snps %>%
       dplyr::mutate(
-        deam=dplyr::case_when(
-          anc=='C'&der=='T' ~ T,
-          anc=='G'&der=='A' ~ T,
-          T ~ F)
+        deam = dplyr::case_when(
+          anc == 'C' & der == 'T' ~ T,
+          anc == 'G' & der == 'A' ~ T,
+          T ~ F
+        )
       ) %>%
       dplyr::filter(!deam) %>%
       dplyr::select(-deam)
   }
-  # if(filter_deam){
-  #   snps <- readr::read_delim(
-  #     snpfile,
-  #     col_names=c('snp','chr','pos','site','anc','der'),
-  #     col_types=c('cdddcc'),
-  #     delim = "\t"
-  #   ) %>%
-  #     dplyr::mutate(relative_pos=1:dplyr::n()) %>%
-  #     dplyr::mutate(deam=dplyr::case_when(anc=='C'&der=='T' ~ T,
-  #                                  anc=='G'&der=='A' ~ T,
-  #                                  T ~ F)) %>%
-  #     dplyr::filter(!deam) %>%
-  #     dplyr::select(-deam)
-  # }else{
-  #   snps <- readr::read_delim(
-  #     snpfile,
-  #     col_names=c('snp','chr','pos','site','anc','der'),
-  #     col_types=c('cdddcc'),
-  #     delim = "\t"
-  #   ) %>%
-  #     dplyr::mutate(relative_pos=1:dplyr::n())
-  # }
+
   # Filter for requested chromosomes
   available_chr <- snps$chr %>%
     unique()
-  if(!is.null(chromosomes)){
-    if(!any(chromosomes%in%available_chr)){
-      stop(paste0('Chromosome names do not match SNP file:\n',
-                  'Requested: ',paste0(chromosomes,collapse=', '),'\n',
-                  'Available: ',paste0(available_chr,collapse=', '),'\n'))
-    }else{
+  if (!is.null(chromosomes)) {
+    if (!any(chromosomes %in% available_chr)) {
+      stop(paste0(
+        'Chromosome names do not match SNP file:\n',
+        'Requested: ',
+        paste0(chromosomes, collapse = ', '),
+        '\n',
+        'Available: ',
+        paste0(available_chr, collapse = ', '),
+        '\n'
+      ))
+    } else {
       snps <- snps %>%
-        dplyr::filter(chr%in%chromosomes)
+        dplyr::filter(chr %in% chromosomes)
     }
   }
+
+  # Check that byPop is logical
+  if (!is.logical(byPop)) {
+    stop('byPop must be logical (TRUE/FALSE)')
+  }
+
+  # Calculate groupings
+
   # Print information about chromosomes
-  if(verbose){
-    cat(paste0('Analysing chromosomes:\n',paste0(unique(snps$chr),collapse=', '),'\n'))
+  if (verbose) {
+    cat(paste0(
+      'Analysing chromosomes:\n',
+      paste0(unique(snps$chr), collapse = ', '),
+      '\n'
+    ))
   }
   # Collect (potentially filtered) ind details
-  if(is.null(pop_pattern)){
-    ind <-  ind_raw %>%
-      dplyr::mutate(row_number=1:dplyr::n())
-  }else{
+  if (is.null(pop_pattern)) {
     ind <- ind_raw %>%
-      dplyr::mutate(row_number=1:dplyr::n()) %>%
-      dplyr::filter(pop%in%pop_pattern)
+      dplyr::mutate(row_number = 1:dplyr::n())
+  } else {
+    ind <- ind_raw %>%
+      dplyr::mutate(row_number = 1:dplyr::n()) %>%
+      dplyr::filter(pop %in% pop_pattern)
   }
 
   # Throw error if ind has no rows.
   n_ind <- nrow(ind)
-  if(n_ind<=1){
-    if(is.null(pop_pattern)){
-      stop(paste0(n_ind,' individuals in final, filtered ind file. Check ind file.'))
-    }else{
-      stop(paste0(n_ind,' individuals in final, filtered ind file. Check ind file, and check pop_pattern.'))
+  if (n_ind <= 1) {
+    if (is.null(pop_pattern)) {
+      stop(paste0(
+        n_ind,
+        ' individuals in final, filtered ind file. Check ind file.'
+      ))
+    } else {
+      stop(paste0(
+        n_ind,
+        ' individuals in final, filtered ind file. Check ind file, and check pop_pattern.'
+      ))
     }
   }
-  geno_list <- vector(mode='list',length=n_ind)
+  geno_list <- vector(mode = 'list', length = n_ind)
 
-  if(verbose){
+  if (verbose) {
     cat('Starting to read in genotype data.\n')
   }
-  pb1 = utils::txtProgressBar(min=1,max=length(geno_list),initial=1,style=3)
+  pb1 <- utils::txtProgressBar(
+    min = 1,
+    max = length(geno_list),
+    initial = 1,
+    style = 3
+  )
   dt <- data.table::fread(genofile, col.names = "snp", colClasses = "character")
-  for(i in 1:n_ind){
-    dt[, digit := stringr::str_sub(snp, ind$row_number[i], ind$row_number[i]),]
+  for (i in 1:n_ind) {
+    dt[, digit := stringr::str_sub(snp, ind$row_number[i], ind$row_number[i]), ]
     geno_list[[i]] <- (dt[[2]] %>% dplyr::na_if("9"))[snps$relative_pos]
-    utils::setTxtProgressBar(pb1,i)
-
+    utils::setTxtProgressBar(pb1, i)
   }
-  if(verbose){
+  if (verbose) {
     cat('  Complete.\n\n')
 
     cat('Starting to compare genotypes and calculate PMR.\n')
   }
-  counter <- 1
-  out_tibble <- tibble::tibble(pair=rep('x',choose(n_ind,2)),nsnps=0,mismatch=0,pmr=0)
-  pb2 = utils::txtProgressBar(min=1,max=choose(n_ind,2),initial=1,style=3)
-  for(i in 1:(n_ind-1)){
-    ind_i <- ind$ind[i]
-    vi <- geno_list[[i]]
-    for(j in (i+1):n_ind){
-      ind_j <- ind$ind[j]
-      vj <- geno_list[[j]]
 
-      snps_filtered_prefiltered <- snps  %>%
-        dplyr::mutate(row_num=1:dplyr::n()) %>%
-        dplyr::filter(!is.na(vi),!is.na(vj))
+  if (!byPop) {
+    pop_group <- rep('Merged', nrow(ind))
+  } else {
+    pop_group <- ind %>%
+      dplyr::group_by(pop) %>%
+      dplyr::mutate(N = dplyr::n()) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(pop_group = ifelse(N < minMerge, 'Merged', pop)) %>%
+      dplyr::pull(pop_group)
+  }
 
-      if(nrow(snps_filtered_prefiltered)>0){
-        snps_filtered <- snps_filtered_prefiltered %>%
-          dplyr::group_by(chr) %>%
-          dplyr::mutate(keep=getfilter(site,filter_length)) %>%
-          dplyr::ungroup() %>%
-          dplyr::filter(keep) %>%
-          dplyr::select(-keep)
-
-        out_tibble$pair[counter] <- paste0(ind_i,' - ',ind_j)
-        out_tibble$nsnps[counter] <- (!is.na(vi[snps_filtered$row_num])&!is.na(vj[snps_filtered$row_num])) %>% sum()
-        out_tibble$mismatch[counter] <- (vi[snps_filtered$row_num]!=vj[snps_filtered$row_num]) %>% sum(na.rm=T)
-        out_tibble$pmr[counter] <-  out_tibble$mismatch[counter]/out_tibble$nsnps[counter]
-      }else{
-        out_tibble$pair[counter] <- paste0(ind_i,' - ',ind_j)
-        out_tibble$nsnps[counter] <- 0
-        out_tibble$mismatch[counter] <- 0
-        out_tibble$pmr[counter] <-  NA
+  # Check if things work
+  if (min(table(pop_group)) == 1) {
+    stop('Even after possibly merging, smallest population group size is 1.')
+  } else {
+    POPS <- pop_group %>%
+      base::unique() %>%
+      base::sort()
+    if (byPop) {
+      if (sum(pop_group == 'Merged') > 0) {
+        ind %>%
+          dplyr::slice(which(pop_group == 'Merged')) %>%
+          dplyr::pull(pop) %>%
+          base::unique() %>%
+          base::sort() %>%
+          base::paste0(collapse = '/') %>%
+          base::sprintf('Merged group made from: %s\n', .) %>%
+          message()
       }
-      counter <- counter+1
-      utils::setTxtProgressBar(pb2,counter)
     }
   }
 
-  if(!is.null(outfile)){
-    if(verbose){
-      cat(sprintf('\n\nSaving processed data to %s.\n',outfile))
+  for (k in 1:length(POPS)) {
+    if (k == 1) {
+      comp_list <- base::vector(mode = 'list', length = length(POPS))
     }
-    readr::write_delim(out_tibble,file=outfile,delim='\t')
+
+    currInds <- ind %>%
+      dplyr::filter(pop_group == POPS[k])
+    n_ind <- nrow(currInds)
+    if (byPop) {
+      sprintf(
+        'Comparing within population: %s (%i comparisons)',
+        POPS[k],
+        choose(n_ind, 2)
+      ) %>%
+        message()
+    }
+    counter <- 1
+    out_tibble <- tibble::tibble(
+      pair = rep('x', choose(n_ind, 2)),
+      nsnps = 0,
+      mismatch = 0,
+      pmr = 0
+    )
+    pb2 <- utils::txtProgressBar(
+      min = 0,
+      max = choose(n_ind, 2),
+      initial = 1,
+      style = 3
+    )
+    for (i in 1:(n_ind - 1)) {
+      ind_i <- currInds$ind[i]
+      vi <- geno_list[[i]]
+      for (j in (i + 1):n_ind) {
+        ind_j <- currInds$ind[j]
+        vj <- geno_list[[j]]
+
+        snps_filtered_prefiltered <- snps %>%
+          dplyr::mutate(row_num = 1:dplyr::n()) %>%
+          dplyr::filter(!is.na(vi), !is.na(vj))
+
+        if (nrow(snps_filtered_prefiltered) > 0) {
+          snps_filtered <- snps_filtered_prefiltered %>%
+            dplyr::group_by(chr) %>%
+            dplyr::mutate(keep = getfilter(site, filter_length)) %>%
+            dplyr::ungroup() %>%
+            dplyr::filter(keep) %>%
+            dplyr::select(-keep)
+
+          out_tibble$pair[counter] <- paste0(ind_i, ' - ', ind_j)
+          out_tibble$nsnps[counter] <- (!is.na(vi[snps_filtered$row_num]) &
+            !is.na(vj[snps_filtered$row_num])) %>%
+            sum()
+          out_tibble$mismatch[counter] <- (vi[snps_filtered$row_num] !=
+            vj[snps_filtered$row_num]) %>%
+            sum(na.rm = T)
+          out_tibble$pmr[counter] <- out_tibble$mismatch[counter] /
+            out_tibble$nsnps[counter]
+        } else {
+          out_tibble$pair[counter] <- paste0(ind_i, ' - ', ind_j)
+          out_tibble$nsnps[counter] <- 0
+          out_tibble$mismatch[counter] <- 0
+          out_tibble$pmr[counter] <- NA
+        }
+        counter <- counter + 1
+        utils::setTxtProgressBar(pb2, counter)
+      }
+    }
+    comp_list[[k]] <- out_tibble
   }
-  if(verbose){
+
+  OUT_TIBBLE <- comp_list %>%
+    dplyr::bind_rows()
+
+  if (!is.null(outfile)) {
+    if (verbose) {
+      cat(sprintf('\n\nSaving processed data to %s.\n', outfile))
+    }
+    readr::write_delim(OUT_TIBBLE, file = outfile, delim = '\t')
+  }
+  if (verbose) {
     cat('\nComplete.\n\n')
   }
 
-  out_tibble %>% return()
+  OUT_TIBBLE %>%
+    return()
 }
-

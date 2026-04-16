@@ -3,7 +3,7 @@ test_that("callRelatedness errors", {
   expect_error(callRelatedness(false_example1))
   expect_error(callRelatedness(counts_example, class_prior = -1))
   expect_error(callRelatedness(counts_example, class_prior = 1.1))
-  expect_error(callRelatedness(counts_example, class_prior = c(0.1, 0.1)))
+  expect_warning(callRelatedness(counts_example, class_prior = c(0.1, 0.1)))
   expect_error(callRelatedness(counts_example, average_relatedness = 1.1))
   expect_error(callRelatedness(counts_example, median_co = -1))
   expect_error(callRelatedness(counts_example, filter_n = -1))

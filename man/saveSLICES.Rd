@@ -37,6 +37,6 @@ which these dimensions are measured.
 }
 \examples{
 \donttest{
-saveSLICES(relatedness_example[1:3, ], outFolder = tempdir())
+saveSLICES(relatedness_example[1:3, ], outFolder=tempdir())
 }
 }

@@ -1,8 +1,8 @@
 ---
-title: "Example pipeline"
+title: "Example BREADR Analysis"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Example pipeline}
+  %\VignetteIndexEntry{Example BREADR Analysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -18,9 +18,27 @@ knitr::opts_chunk$set(
 library(BREADR)
 ```
 
-## Example
+## Introduction
 
-This basic example shows you how to analyse a real (anonymised) ancient DNA data set. 
+BREADR (Biological Relatedness from Ancient DNA in R) is a Bayesian method for identifying the degrees of relatedness between pairs of individuals, especially in cases of extremely low-coverage sequence data (as low as 0.04X). BREADR leverages the so-called pairwise mismatch rate (PMR), a measure of how much the genotypes of individuals do not match, to do this. BREADR assumes an underlying binomial model for the proportion of mismatched genotype calls, and calculates posterior probabilities for degrees of relatedness up to the second-degree (third-degree or higher are defined as "Unrelated"). BREADR works with the Eigenstrat data format as an initial input, allowing researchers to control for factors such as contamination before BREADR is used.
+
+We have implemented BREADR in the R statistical programming language, and include methods for assigning degrees of relatedness (up to the second-degree), testing for whether separate groups of individuals can be merged into one analysis, for visualising both pairwise and overall relatedness, for sensitivity analyses for changes in the prior distributions, and for testing if degrees of relatedness up to the tenth-degree are consistent with the observed PMR. This basic example shows you how to analyse a real (anonymised) ancient DNA data set. 
+
+## The theory behind BREADR
+
+For a comprehensive description of the underlying model used by BREADR, please see the [manuscript](https://doi.org/10.21105/joss.07916). However, we give a brief overview of the concept here. Consider two individuals $i$ and $j$, with $N_{ij}$ independent sites in the genome for which genotype calls have been made. We count the number of genotypes which do not match, and denote this $X_{ij}$. We assume that $X_{ij}$ will follow a binomial distribution $X_{ij} \sim B(N_{ij},p_{ij})$, that $p_{ij}$ is defined by how closely related the two individuals are.
+
+It is known that if the expected PMR of two unrelated individuals is $\bar{p}$, then the expected PMR for individuals how are related in the $k^{\text{th}}$ degree will be
+
+$$
+  p_{k} = \bar{p}\left( 1 - \dfrac{1}{2^{k+1}} \right).
+$$
+
+Since the probability mass function for a binomial distribution is well known, we can calculate the probability of observing the number of mismatched genotypes for $k=0$ (same/twins), $k=1$ (first-degree), $k=2$ (second-degree), and then a Poisson-weighted sum of the remaining values of $k$ to capture the third-degree or less related probability.
+
+When we have the probability of observing the number of mismatches we see, given a value of $k$, denoted $L(X_{ij} | K=k,N_{ij})$, and assuming a (user-defined) prior probability of relatedness, we then calculate a posterior probability of the degree of relatedness being $k$, _given_ the observed PMR.
+
+## Processing your data
 
 An analysis would normally start by defining paths to all three Eigenstrat files, i.e.,
 
@@ -53,10 +71,11 @@ counts_example <- processEigenstrat(
 
 Also included are options to change the minimum distance between overlapping sites (filter_length) from the default $1\times 10^5,$ an option to only include individuals (pop_pattern) from certain populations (as defined in the ind file) and an option to remove C->T and G->A SNPs to avoid the effects of deamination.
 
- Note that since the Eigenstrat files are too large to include, we 
- provide a pre-processed data set called [counts_example](https://github.com/jonotuke/BREADR/blob/master/data/counts_example.rda) which is the 
- product of running processEigenstrat() on real data (although the raw 
- Eigenstrat files can be found on [the Github page](https://github.com/jonotuke/BREADR/tree/master/data-raw)). 
+## Processing only pairs within groups to save computational effort
+
+A new feature is the ability to process only pairs _within_ the same populations (as per the populations defined in column three of the Eigenstrat ind file). This can be useful when populations should not be considered together as, for example, they may never have been able to be closely related due to vast distances in time or geography, and/or might have a different baseline PMR. When running the processEigenstrat() function, by setting the parameter *byPop=TRUE*, only individuals in the same population will have a PMR calculated. In the example data, individuals Ind1-Ind4 are in "Pop1" and individuals Ind5-Ind6 are in "Pop2". This means that while each genotype of each individual will be read into BREADR, only the four individuals in Pop1 are compared to each other ($4\times 3/2 = 6$ pairs) and only the two individuals in Pop2 are compared to each other ($2\times 1/2 =1$ pairs), totaling 7 PMR calculations. This is less than the $6\times 5/2 = 15$ pairs that would be calculated by default, more than halving the number of calculations. This saving in computational effort will be greater for large sample sizes. We also include a related parameter minMerge which defines the smallest possible "group" (default equals 2). This is to control the smallest group sizes as estimating a baseline PMR can be difficult for small groups (such as in Pop2 in the example data), and any groups with a sample size smaller than this parameter are merged into one group called "Merged" (hence you should avoid this as a population name in your Eigenstrat ind file when using this parameter).
+
+Note that since the Eigenstrat files are too large to include, we provide a pre-processed data set called [counts_example](https://github.com/jonotuke/BREADR/blob/master/data/counts_example.rda) which is the product of running processEigenstrat() on real data (although the raw Eigenstrat files can be found on [the Github page](https://github.com/jonotuke/BREADR/tree/master/data-raw)). 
 
 We now load the counts_example tibble. 
 
@@ -69,7 +88,9 @@ counts_example
 counts_example
 ```
 
-We can we can estimate the degrees of relatedness from the raw counts using the callRelatedness() function. Users have the option to change the prior probability for each degree of relatedness (class_prior) from the default uniform prior, to define the expected PMR (average_relatedness) for a pair of unrelated individuals from the default of the sample median, and to set the minimum number of overlapping SNPs required for a pair of individuals (filter_n) to be included in the analysis from the default of 1. If the user decides to use the sample median as an estimate for the expected PMR for a pair of unrelated individuals, the minimum number of overlapping SNPs for a pair (median_co) can be changed from the default of 500.
+## Calling degrees of relatedness from counts
+
+We can estimate the degrees of relatedness from the raw counts using the callRelatedness() function. Users have the option to change the prior probability for each degree of relatedness (class_prior) from the default uniform prior, to define the expected PMR (average_relatedness) for a pair of unrelated individuals from the default of the sample median, and to set the minimum number of overlapping SNPs required for a pair of individuals (filter_n) to be included in the analysis from the default of 1. If the user decides to use the sample median as an estimate for the expected PMR for a pair of unrelated individuals, the minimum number of overlapping SNPs for a pair (median_co) can be changed from the default of 500.
 
 ```{r, eval = FALSE}
 relatedness_example <- callRelatedness(counts_example)
@@ -81,33 +102,123 @@ relatedness_example <- callRelatedness(counts_example)
 relatedness_example
 ```
 
+For each pair of individuals, a posterior probability for same/twins, first-degree, second-degree and unrelated will be calculated and reported in the final four columns. However, the relationship that is reported is simply the relationship that had the _highest posterior probability_, no matter how high the value of the second highest posterior probability is. In the section titled "Visualising the relatedness information for two individuals" we will see why it can be important to look at these values for "borderline" assignments, and how this can be easily done using BREADR.
 
-An overall picture of the relatedness for these individuals can be created, which displays the highest posterior probability degree of relatedness for each pair of individuals, indicated by the colour and shape of the points with 95% confidence intervals. The dashed horizontal lines indicated the expected values for each degree of relatedness.
+## Assessing if groups can be merged
 
-Users can choose to remove individuals with less than a user-defined number of overlapping SNPs (nsnps_cutoff). In large data sets, it is expected that the vast majority of individuals will be unrelated, and so the user may wish to only plot the more closely related individuals. TO this end, the user may choose to plot only the first $N$ individuals (using the  input parameter N), which have been sorted by PMR value, in ascending order.
+We now also include a diagnostic plot to consider whether populations _can be merged_. We may wish to merge populations (we use population instead of group to match the Eigenstrat nomenclature for the third column of the IND file) if we have a small number of individuals, and wish to increase the _pairwise_ sample size.
 
-```{r, warning=FALSE, message=FALSE}
+The plotDOUGH() function takes as input your processEigenstrat() output (the raw counts) and produces side-by-side box plots/violin plots, comparing the PMR values _per population_, with associated non-parametric tests for whether the median PMR (which we use as a baseline level of relatedness by default in BREADR) differs between populations. When employing this function the user can set parameters for the font size on the x-axis (fntsize, default equals 7), the minimum number of overlapping SNPs for a pair to be included in the tests and plot (nsnps_cutoff, default is 500) and removeBetween. removeBetween forces the test to ignore the between-population PMR values, which may be useful.
+
+In cases where there are more than two populations, BREADR first performs a Kruskal-Wallis test to see if _any_ population medians significantly differ (p-value in top-left), and then performs pairwise posthoc Dunn's tests to identify _which_ population medians are significantly different, with p-value adjustments performed using the Holm-Bonferroni method. Populations with significantly differently medians are then identified in the plot as bars above the population (with p-values). If there are only two population (and removeBetween is set to TRUE) then a Mann-Whitney U-test is performed and no bars will be shown even if the groups are significantly different, so the p-value in the title must be used to assess significance. If two populations are not significantly different, then they can, in theory, be merged.
+
+We run plotDOUGH() on our example in the following way:
+
+```{r, fig.dim=c(7.2,5), warning=FALSE, message=FALSE, fig.cap = '*__Figure 1__: plotDOUGH results for the example data set, with the Between Groups population kept.*'}
+indfile1 <- fs::path_package(package = "BREADR", "extdata/example.ind.txt")
+plotDOUGH(
+  counts_example,
+  indfile = indfile1,
+  nsnps_cutoff = 500
+)
+```
+
+In this example (Figure 1), the Kruskal-Wallis test returns a p-value of 0.57 (>0.05), indicating that there is no evidence that any population median is different, and hence our two populations can be merged. However, these non-parametric tests can lack statistical power for very small sample sizes, as might be the case here. However, as an example of when there is a difference, we modified the example data such that Pop1 and Pop2 cannot be merged. (Note that the "Between" groups PMR values are not significantly different from Pop1 or Pop2, but this is only because they are the average of the two groups, and in some sense should be ignored here).
+
+```{r, echo=FALSE, fig.dim=c(7.2,5), warning=FALSE, message=FALSE, fig.cap = '*__Figure 2__: plotDOUGH results for the example data set where the PMR values have been artifically modified to yield different baseline (median) PMR values.*'}
+indfile2 <- fs::path_package(package = "BREADR", "extdata/example2.ind.txt")
+counts_example %>%
+  dplyr::mutate(
+    mismatch = dplyr::case_when(
+      stringr::str_count(pair, 'Ind[123]') == 2 ~ floor(0.22 * nsnps),
+      stringr::str_count(pair, 'Ind[456]') == 2 ~ floor(0.16 * nsnps),
+      T ~ floor(0.19 * nsnps)
+    ) +
+      sample(10:20, dplyr::n(), replace = TRUE),
+    pmr = mismatch / nsnps
+  ) %>%
+  plotDOUGH(
+    indfile = indfile2,
+    nsnps_cutoff = 500
+  )
+```
+
+
+
+## Visualising overall relatedness patterns
+
+An overall picture of the relatedness for these individuals can be created (Figure 3), which displays the highest posterior probability degree of relatedness for each pair of individuals, indicated by the colour and shape of the points with 95% confidence intervals. The dashed horizontal lines indicated the expected values for each degree of relatedness.
+
+```{r, warning=FALSE, message=FALSE, fig.dim=c(7.2,5), fig.cap = '*__Figure 3__: Pairwise diagnostic plot for relatedness call for Ind1 and Ind 2 called using the number option for row. (A) the distribution of PMR values given the number of overlapping SNPs (n=1518) for each degree of relatedness (filled colour), and the observed PMR with 95% confidence intervals. (B) relative posterior probabilities for all four possible assignments of degrees of relatedness. Note we added panel labels A and B using the labels parameter.*'}
 plotLOAF(relatedness_example)
 ```
 
+Users can choose to remove individuals with less than a user-defined number of overlapping SNPs (nsnps_cutoff). In large data sets, it is expected that the vast majority of individuals will be unrelated, and so the user may wish to only plot the more closely related individuals. To this end, the user may choose to plot only the first $N$ individuals (using the  input parameter N), which have been sorted by PMR value, in ascending order.
 
+## Visualising the relatedness information for two individuals
 
-A  plot for the assignment of the "Unrelated" degree of relatedness to individuals Ind1 and Ind2 can be produced which shows diagnostic information about the estimated genetic relatedness between a single pair of individuals. In the left panel, the distribution of PMR values for each degree of relatedness, given the number of overlapping SNPs, with the observed PMR (and 95% confidence interval) displayed below this. In the right panel are the normalised posterior probabilities for the each of the degrees of relatedness, indicating the certainty with which the degree of relatedness with the highest posterior probability was chosen.
+A researcher may be interested in exploring the relatedness between two specific individuals in the analysis. These individuals may be especially important to the study or may have a PMR that is "uncertain" (i.e., falls between two of the expected values for degrees of relatedness). 
 
-```{r}
-plotSLICE(relatedness_example, row = 1)
+A plot for the assignment of the "Unrelated" degree of relatedness to individuals Ind1 and Ind2 can be produced which shows diagnostic information about the estimated genetic relatedness between a single pair of individuals (Figure 4). In the left panel, the distribution of PMR values for each degree of relatedness, given the number of overlapping SNPs, with the observed PMR (and 95% confidence interval) displayed below this. In the right panel are the normalised posterior probabilities for each of the degrees of relatedness, indicating the certainty with which the degree of relatedness with the highest posterior probability was chosen.
+
+```{r, fig.dim=c(7.2,5), warning=FALSE, fig.cap = '*__Figure 4__: Pairwise diagnostic plot for relatedness call for Ind1 and Ind 2 called using the text option for row. (A) the distribution of PMR values given the number of overlapping SNPs (n=1518) for each degree of relatedness (filled colour), and the observed PMR with 95% confidence intervals. (B) relative posterior probabilities for all four possible assignments of degrees of relatedness. Note we added panel labels A and B using the labels parameter.*'}
+plotSLICE(relatedness_example, row = 1, labels = c('A', 'B'))
 ```
 
+Alternatively we can create an identical plot, but this time choose the row using the full pair name instead of the row number (Figure 5).
 
-Alternatively we can choose the row using the full pair name instead of the row number.
-
-```{r}
-plotSLICE(relatedness_example, row = "Ind1 - Ind2")
+```{r, fig.dim=c(7.2,5), warning=FALSE, fig.cap = '*__Figure 5__: Pairwise diagnostic plot for relatedness call for Ind1 and Ind 2 called using the text option for row. (A) the distribution of PMR values given the number of overlapping SNPs (n=1518) for each degree of relatedness (filled colour), and the observed PMR with 95% confidence intervals. (B) relative posterior probabilities for all four possible assignments of degrees of relatedness. Note we added panel labels A and B using the labels parameter.*'}
+plotSLICE(relatedness_example, row = "Ind1 - Ind2", labels = c('A', 'B'))
 ```
 
-We can test whether the observed PMR between Ind1 and Ind2 is consistent with a 3rd-degree genetic relationship, or not, but any degree of relatedness from 0 to 10 can be investigated. This function returns the p-value from the associated binomial test, and by setting verbose to TRUE, all diagnostic output from the test can be displayed
+From these we make the following observations. First, in panel A we see that the observed PMR falls between the distributions for second-degree and unrelated. Second, in panel B we see that the posterior probabilities for both assignments are relatively similar (even if the highest posterior assignment was reported as unrelated). Unfortunately, this is the limit of the resolution of BREADR, as we cannot assign a third-degree relationship.
+
+## Binomial tests for degrees of relatedness
+
+Since we assume that the number of mismatches follows a binomial distribution, and since we know the expected rate of mismatch for any value of $k$, we can test if the observed PMR is consistent with a $k^{\text{th}}$-degree of relatedness using a binomial hypothesis test. This is done using the test_degree function where again the row of interest must be given, and the degree ($k$) is specified.
+
+For example, we can test whether the observed PMR between Ind1 and Ind2 is consistent with a 3rd-degree genetic relationship, or not, but any degree of relatedness from 0 to 10 (including non-integer values) can be investigated. This function returns the p-value from the associated binomial test, and by setting verbose to TRUE, all diagnostic output from the test can be displayed.
 
 ```{r}
-test_degree(relatedness_example, 1, 3, verbose = TRUE)
+test_degree(relatedness_example, row = 1, degree = 3, verbose = TRUE)
 ```
 
+Here we see that Ind1 and Ind2 yield a PMR consistent with a third-degree relationship (at the 5% significance level, as the p-value is greater than 0.05). If the verbose parameter is TRUE, then more than the p-value is returned. Specifically, we see (in order) the null hypothesis, the PMR we would expected for a third-degree relationship, the PMR we actually observed, the estimated degree of relatedness (calculated by inverting the equation for $p_k$), the p-value and the decision for the test (at the 5% significance level).
+
+## Sensitivity of the results to the prior distribution
+
+By default, BREADR sets the prior distribution for the four possible relatedness assignments as equally likely, or a uniform prior of $P(K=k) = \frac{1}{4}$. This is likely not reasonable in a random sample from a true population. However, an uninformative prior makes the least assumptions, and on a practical level, the PMR associated with same/twin or first-degree can often be overwhelmingly obvious for a sufficient number of overlapping sites. Further, some studies will contain random samples from populations, and hence twins will be very rare. Others samples may be from collective burials (for example), in which case elements from the same individuals may be extremely likely. Hence, we leave it to the user to decide on a sensible prior distribution, but concede that this can be difficult. 
+
+To address this we include a function called priorSensitivity() to allow researchers to easily explore how sensitive the results of callRelatedness() are to the choice of the prior distribution. The function forms a grid of different prior probabilities to test, and then for each degree of relatedness, at each prior value, calculates the proportion of times each degree of relatedness would have been the "assigned" relationship (when all other priors are varied). Consider the example for Ind1 and Ind2 (row one) in the example data (Figure 6).
+
+```{r, fig.dim=c(7.2,5), warning=FALSE, message=FALSE, fig.cap = '*__Figure 6__: sensitivity analysis for the relationship between Ind1 and Ind2. The prior probabilities for all degrees of relatedness are tested at values between 0.05 and 0.5. Bars indicate the proportion of times a degree of relatedness was the maximum posterior relationship. Here we see that higher prior probabilities for Second-Degree and Unrelated yield highest posterior probability assignments for those degrees of relatedness, respectively. Hence, we must consider these prior probabilities carefully when assigning this relationship.*'}
+BREADR::priorSensitivity(
+  in_BREADR = relatedness_example,
+  row = "Ind1 - Ind2",
+  degrees = c(3, 4),
+  grid_space = 0.05,
+  maxPrior = 0.5
+)
+```
+
+This output can be difficult to interpret at first, and so we explain it here in detail. From Figure 5 we can see two panels: 2nd-Degree and Unrelated, both with a y-axis from 0% to 100%, and an x-axis that goes from 0 to the (default) maximum tested prior probability of 0.5. For the prior probability value along the x-axis, we see a bar. The way to interpret the first bar (at $x=0.05$) is: when the prior probability of _Unrelated_ is fixed at 0.05, and across all other values that the other three prior values can be (so that all four prior probabilities sum to one), we see that the relationship between Ind1 and Ind2 is returned as "Unrelated" approximately 4% of time, "2nd-Degree" approximately 96% of the time, and never as "Same/Twins" or "1st-Degree", as we never see the colours associated with them. We can see that the next bar ($x=0.1$) sees "2nd-degree" assigned most often, but less often than before. And this trend continues. A sensible interpretation of this is that as the prior probability of "Unrelated" increases, we see that the relationship between Ind1 and Ind2 is more likely to be called "Unrelated", which makes sense. We also see that we would need a prior probability of unrelated of at least 0.25 to call an unrelated relationship. 
+
+Since Same/Twins and 1st-degree is never called, the top panel for 2nd-Degree effectively shows the inverse of the bottom panel. Unfortunately this sensitivity analysis shows us that the outcome of BREADR is strongly affected by the prior distribution here, which makes sense since it appears as if the relationship is potentially third-degree.
+
+To give an example of when a degree of relatedness is not affected by the choice of prior probabilities, we produce a sensitivity analysis for Ind3 and Ind4 (Figure 7), who are unambiguously Same/Twins with posterior probability one (to machine precision). We also decrease the grid spacing (grid_space=0.025) to have a finer-scale analysis (at the cost of computational time). Here we can see that no matter how we set the prior distribution for Same/Twins, even as low as 0.025, we still always assign Same/Twins. Hence, this assignment is free of any affect from the prior distribution.
+
+```{r, fig.dim=c(7.2,3.5), warning=FALSE, message=FALSE,fig.cap = '*__Figure 7__: sensitivity analysis for the relationship between Ind3 and Ind4. The prior probabilities for all degrees of relatedness are tested at values between 0.05 and 0.5. Bars indicate the proportion of times a degree of relatedness was the maximum posterior relationship, and the dashed black line indicates 50%. This clearly shows that no matter the prior probability values for any of the degrees of relatedness, the highest posterior probability assignment is always Same/Twins.*'}
+BREADR::priorSensitivity(
+  in_BREADR = relatedness_example,
+  row = "Ind3 - Ind4",
+  degrees = c(1),
+  grid_space = 0.025,
+  maxPrior = 0.5
+)
+```
+
+The priorSensitivity() function can also be adjusted with input parameters. First, we can focus on any combination of the degrees of relatedness, and a vector containing any combination of 1, 2, 3 or 4 will specify Same/Twin, 1st-Degree, 2nd-Degree or Unrelated to be explored, respectively. For example, to look at just the affect on calling Same/Twins, set degree=1, or for 2nd-Degree _and_ Unrelated, degree=c(3,4). Second, the maximum value for the prior probability (the upper bound of the x-axis) can be changed using the maxPrior parameter (default is 0.5). Finally, grid_space defines the space between tested prior probability values (the width of the bars on the x-axis). The smaller this number, the more bars are calculated, but this comes at the expense of computational time (default is 0.05).
+
+## Acknowledgements
+
+The authors wish to thank Beatriz Amorim for help testing the functionality of BREADR, and Prof. Nigel Bean and Dr. Vincent Braunack-Mayer for enlightening and instructive conversations.

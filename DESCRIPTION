@@ -1,7 +1,7 @@
 Package: BREADR
 Title: Estimates Degrees of Relatedness (Up to the Second Degree) for
         Extreme Low-Coverage Data
-Version: 1.0.3
+Version: 1.1.0
 Authors@R: 
     c(
     person(
@@ -40,24 +40,25 @@ Description: The goal of the package is to provide an easy-to-use method
   degrees of relatedness.
 License: MIT + file LICENSE
 Encoding: UTF-8
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 URL: https://github.com/jonotuke/BREADR,
         https://jonotuke.github.io/BREADR/
 BugReports: https://github.com/jonotuke/BREADR/issues
-Suggests: spelling, knitr, rmarkdown, testthat (>= 3.0.0), Matrix
+Suggests: spelling, knitr, rmarkdown, testthat (>= 3.0.0), Matrix, fs
 Config/testthat/edition: 3
-Imports: data.table, dplyr, forcats, ggplot2, ggpubr, grDevices,
-        magrittr, MASS, matrixStats, purrr, readr, stringr, tibble
-Depends: R (>= 4.4)
+Imports: data.table, dplyr, forcats, ggplot2, ggpubr, ggstatsplot,
+        grDevices, magrittr, MASS, matrixStats, purrr, readr, stringr,
+        tibble, tidyr
+Depends: R (>= 4.3)
 LazyData: true
 Language: en-US
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2025-04-14 10:15:03 UTC; jonathantuke
-Author: Jono Tuke [aut, cre] (<https://orcid.org/0000-0002-1688-8951>),
-  Adam B. Rohrlach [aut] (<https://orcid.org/0000-0002-4204-5018>),
-  Wolfgang Haak [aut] (<https://orcid.org/0000-0003-2475-2007>),
-  Divyaratan Popli [aut] (<https://orcid.org/0000-0002-0305-6427>)
+Packaged: 2026-04-16 06:32:17 UTC; a1078881
+Author: Jono Tuke [aut, cre] (ORCID: <https://orcid.org/0000-0002-1688-8951>),
+  Adam B. Rohrlach [aut] (ORCID: <https://orcid.org/0000-0002-4204-5018>),
+  Wolfgang Haak [aut] (ORCID: <https://orcid.org/0000-0003-2475-2007>),
+  Divyaratan Popli [aut] (ORCID: <https://orcid.org/0000-0002-0305-6427>)
 Maintainer: Jono Tuke <simon.tuke@adelaide.edu.au>
 Repository: CRAN
-Date/Publication: 2025-04-14 10:40:09 UTC
+Date/Publication: 2026-04-16 07:02:46 UTC
